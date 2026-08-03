@@ -1,207 +1,132 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avatar Interactivo con Canvas</title>
-    <style>
-        body {
-            margin: 0;
-            background: #0f172a;
-            color: #f8fafc;
-            font-family: system-ui, -apple-system, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        .container {
-            text-align: center;
-            background: #1e293b;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        canvas {
-            background: #0f172a;
-            border-radius: 0.75rem;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-            cursor: pointer;
-        }
-        .controls {
-            margin-top: 1rem;
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-        }
-        input[type="text"] {
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid #475569;
-            background: #0f172a;
-            color: #fff;
-            width: 300px;
-        }
-        button {
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            border: none;
-            background: #3b82f6;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        button:hover {
-            background: #2563eb;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Avatar Hablando</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes wave {
+      0%, 100% { transform: scaleY(0.5); }
+      50% { transform: scaleY(1); }
+    }
+    .paused .wave-bar {
+      animation-play-state: paused !important;
+      opacity: 0.3;
+    }
+    .paused #status-dot {
+      background-color: #ef4444;
+      animation: none;
+    }
+    .paused #status-text {
+      color: #ef4444;
+    }
+  </style>
 </head>
-<body>
+<body class="bg-gradient-to-b from-slate-900 to-slate-800 min-h-screen flex flex-col items-center justify-center p-6">
 
-<div class="container">
-    <h2>Mi Avatar Inteligente con Canvas</h2>
-    <canvas id="avatarCanvas" width="500" height="650"></canvas>
-    
-    <div class="controls">
-        <input type="text" id="speechText" placeholder="Escribe lo que quieres que diga el avatar..." value="¡Hola! Bienvenidos a nuestra aplicación interactiva con Canvas.">
-        <button id="talkBtn">Hablar</button>
+  <div class="relative group">
+    <div class="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+    <div class="relative w-72 h-96 rounded-3xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-900">
+      <!-- Cambia estas rutas si tus imágenes tienen otro nombre -->
+      <img id="avatar-img" src="img1.png" class="w-full h-full object-cover transition-opacity duration-75" alt="Avatar" />
     </div>
-</div>
+    <div class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-slate-900/90 backdrop-blur px-4 py-2 rounded-full border border-slate-700 shadow-lg">
+      <div id="status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+      <span id="status-text" class="text-xs font-medium text-slate-300">Hablando...</span>
+    </div>
+  </div>
 
-<script>
-const canvas = document.getElementById('avatarCanvas');
-const ctx = canvas.getContext('2d');
+  <div class="mt-10 flex gap-3 flex-wrap justify-center">
+    <button id="toggle-btn" onclick="toggleTalking()" class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl shadow-lg transition-all active:scale-95 flex items-center gap-2">
+      <svg id="pause-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <svg id="play-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <span id="btn-text">Pausar</span>
+    </button>
+    <button onclick="setSpeed('slow')" id="speed-slow" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-all active:scale-95 text-sm">Lento</button>
+    <button onclick="setSpeed('normal')" id="speed-normal" class="px-4 py-2.5 bg-cyan-600 text-white font-medium rounded-xl transition-all active:scale-95 text-sm ring-2 ring-cyan-400">Normal</button>
+    <button onclick="setSpeed('fast')" id="speed-fast" class="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-all active:scale-95 text-sm">Rápido</button>
+  </div>
 
-// Coordenadas del ratón relativas al canvas
-let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+  <div class="mt-8 flex items-end gap-1 h-10">
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 20%; animation: wave 0.8s ease-in-out infinite;"></div>
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 40%; animation: wave 0.9s ease-in-out infinite 0.1s;"></div>
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 60%; animation: wave 0.7s ease-in-out infinite 0.2s;"></div>
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 80%; animation: wave 0.85s ease-in-out infinite 0.15s;"></div>
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 100%; animation: wave 0.75s ease-in-out infinite 0.05s;"></div>
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 70%; animation: wave 0.95s ease-in-out infinite 0.25s;"></div>
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 50%; animation: wave 0.8s ease-in-out infinite 0.3s;"></div>
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 30%; animation: wave 0.9s ease-in-out infinite 0.2s;"></div>
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 60%; animation: wave 0.7s ease-in-out infinite 0.1s;"></div>
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 80%; animation: wave 0.85s ease-in-out infinite 0.35s;"></div>
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 40%; animation: wave 0.75s ease-in-out infinite 0.15s;"></div>
+    <div class="wave-bar w-1 bg-cyan-500/60 rounded-full" style="height: 20%; animation: wave 0.9s ease-in-out infinite 0.05s;"></div>
+  </div>
 
-// Carga de imágenes (reemplaza los nombres con los archivos de tus capas)
-const imgBase = new Image();
-imgBase.src = 'ChatGPT Image 17 de juny del 2026, 09_54_36.png'; // Imagen base con la cara completa
+  <script>
+    // Orden de las imágenes: hablando medio -> boca cerrada -> sonrisa/énfasis
+    const images = [
+      "Gemini_Generated_Image_lr1j2flr1j2flr1j.png",
+      "Gemini_Generated_Image_89lp3989lp3989lp.png",
+      "ChatGPT Image 17 de juny del 2026, 09_54_36.png"
+    ];
 
-// Estados de la boca para la animación de voz
-const mouthClosed = new Image();
-mouthClosed.src = 'watermarked_img_1956988458682263485.png'; // Boca cerrada
+    let currentIndex = 0;
+    let isTalking = true;
+    let intervalId = null;
+    let speed = 200;
+    const speeds = { slow: 400, normal: 200, fast: 100 };
 
-const mouthMedium = new Image();
-mouthMedium.src = 'Gemini_Generated_Image_lr1j2flr1j2flr1j.png'; // Boca media abierta
-
-const mouthOpen = new Image();
-mouthOpen.src = 'ChatGPT Image 17 de juny del 2026, 09_54_36.png'; // O la variante con boca abierta
-
-let currentMouth = mouthClosed;
-let isSpeaking = false;
-let animTimer = 0;
-let headAngle = 0;
-
-// Escuchar movimiento del ratón para los ojos
-window.addEventListener('mousemove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    mouse.x = e.clientX - rect.left;
-    mouse.y = e.clientY - rect.top;
-});
-
-// Bucle principal de renderizado y animación
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    
-    // 1. Efecto sutil de respiración / movimiento de cabeza
-    headAngle += 0.03;
-    let floatY = Math.sin(headAngle) * 3;
-    ctx.translate(0, floatY);
-
-    // 2. Dibujar la imagen base del avatar
-    if (imgBase.complete) {
-        // Dibujamos la cara centrada
-        ctx.drawImage(imgBase, 50, 50, 400, 520);
+    function startTalking() {
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        currentIndex = (currentIndex + 1) % images.length;
+        document.getElementById('avatar-img').src = images[currentIndex];
+      }, speed);
     }
 
-    // 3. Animación de la boca si está hablando
-    if (isSpeaking) {
-        animTimer++;
-        // Alternar estados de la boca cada pocos fotogramas para simular fonemas
-        let state = Math.floor(animTimer / 5) % 3;
-        if (state === 0) currentMouth = mouthClosed;
-        else if (state === 1) currentMouth = mouthMedium;
-        else currentMouth = mouthOpen;
+    function stopTalking() {
+      if (intervalId) { clearInterval(intervalId); intervalId = null; }
+    }
 
-        // Aquí dibujamos la capa de la boca en su posición exacta sobre la cara
-        if (currentMouth.complete) {
-            // Coordenadas de ejemplo de la boca en el canvas (ajusta según tus imágenes)
-            // ctx.drawImage(currentMouth, x, y, ancho, alto);
+    function toggleTalking() {
+      isTalking = !isTalking;
+      const btnText = document.getElementById('btn-text');
+      const pauseIcon = document.getElementById('pause-icon');
+      const playIcon = document.getElementById('play-icon');
+      const container = document.querySelector('body');
+
+      if (isTalking) {
+        startTalking();
+        btnText.textContent = 'Pausar';
+        pauseIcon.classList.remove('hidden');
+        playIcon.classList.add('hidden');
+        container.classList.remove('paused');
+        document.getElementById('status-text').textContent = 'Hablando...';
+      } else {
+        stopTalking();
+        btnText.textContent = 'Reanudar';
+        pauseIcon.classList.add('hidden');
+        playIcon.classList.remove('hidden');
+        container.classList.add('paused');
+        document.getElementById('status-text').textContent = 'En pausa';
+      }
+    }
+
+    function setSpeed(mode) {
+      speed = speeds[mode];
+      ['slow', 'normal', 'fast'].forEach(m => {
+        const btn = document.getElementById('speed-' + m);
+        if (m === mode) {
+          btn.className = 'px-4 py-2.5 bg-cyan-600 text-white font-medium rounded-xl transition-all active:scale-95 text-sm ring-2 ring-cyan-400';
+        } else {
+          btn.className = 'px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium rounded-xl transition-all active:scale-95 text-sm';
         }
+      });
+      if (isTalking) startTalking();
     }
 
-    // 4. Lógica de seguimiento de ojos interactiva
-    // Calculamos el desplazamiento de las pupilas en función de la posición del ratón
-    let eyeCenterXLeft = 195;
-    let eyeCenterXRight = 305;
-    let eyeCenterY = 230;
-
-    let maxDist = 6; // Límite de movimiento de la pupila dentro del ojo
-    let dx = mouse.x - eyeCenterXLeft;
-    let dy = mouse.y - eyeCenterY;
-    let angle = Math.atan2(dy, dx);
-    let dist = Math.min(Math.hypot(dx, dy) * 0.05, maxDist);
-
-    let pupilLeftX = eyeCenterXLeft + Math.cos(angle) * dist;
-    let pupilLeftY = eyeCenterY + Math.sin(angle) * dist;
-
-    let dx2 = mouse.x - eyeCenterXRight;
-    let dy2 = mouse.y - eyeCenterY;
-    let angle2 = Math.atan2(dy2, dx2);
-    let dist2 = Math.min(Math.hypot(dx2, dy2) * 0.05, maxDist);
-
-    let pupilRightX = eyeCenterXRight + Math.cos(angle2) * dist2;
-    let pupilRightY = eyeCenterY + Math.sin(angle2) * dist2;
-
-    // Dibujar pupilas dinámicas
-    ctx.fillStyle = '#1e1b4b';
-    ctx.beginPath();
-    ctx.arc(pupilLeftX, pupilLeftY, 8, 0, Math.PI * 2);
-    ctx.arc(pupilRightX, pupilRightY, 8, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Brillo de los ojos
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(pupilLeftX - 2, pupilLeftY - 2, 3, 0, Math.PI * 2);
-    ctx.arc(pupilRightX - 2, pupilRightY - 2, 3, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.restore();
-    requestAnimationFrame(animate);
-}
-
-// Integración con Web Speech API para hablar y mover la boca al mismo tiempo
-document.getElementById('talkBtn').addEventListener('click', () => {
-    const text = document.getElementById('speechText').value;
-    if (!text) return;
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'es-ES';
-
-    utterance.onstart = () => {
-        isSpeaking = true;
-    };
-
-    utterance.onend = () => {
-        isSpeaking = false;
-        currentMouth = mouthClosed;
-    };
-
-    window.speechSynthesis.speak(utterance);
-});
-
-// Iniciar animación cuando carguen las imágenes
-imgBase.onload = () => {
-    animate();
-};
-</script>
-
+    startTalking();
+  </script>
 </body>
 </html>
