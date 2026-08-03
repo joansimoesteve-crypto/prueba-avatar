@@ -13,17 +13,12 @@
 }
 
 body{
-
-    background:#1e1e1e;
-
+    background:#202020;
     display:flex;
     justify-content:center;
     align-items:center;
-
     height:100vh;
-
     overflow:hidden;
-
 }
 
 #avatar{
@@ -33,56 +28,33 @@ body{
     width:712px;
     height:926px;
 
-    animation:respirar 5s ease-in-out infinite;
+    animation:respirar 4s ease-in-out infinite;
 
 }
 
 #avatar img{
 
     position:absolute;
-
     left:0;
     top:0;
 
     width:100%;
     height:100%;
 
-    user-select:none;
-    pointer-events:none;
-
-}
-
-#ojoIzq,
-#ojoDer{
-
-    transform-origin:center center;
-
 }
 
 @keyframes respirar{
 
 0%{
-
-    transform:
-    translateY(0px)
-    rotate(0deg);
-
+transform:translateY(0px) rotate(0deg);
 }
 
 50%{
-
-    transform:
-    translateY(4px)
-    rotate(.3deg);
-
+transform:translateY(4px) rotate(.25deg);
 }
 
 100%{
-
-    transform:
-    translateY(0px)
-    rotate(0deg);
-
+transform:translateY(0px) rotate(0deg);
 }
 
 }
@@ -95,50 +67,41 @@ body{
 
 <div id="avatar">
 
-    <img id="base" src="base.png">
+<img src="base.png">
 
-    <img id="ojoIzq" src="ojo_izq.png">
-
-    <img id="ojoDer" src="ojo_der.png">
+<img id="boca0" src="boca_0.png">
+<img id="boca1" src="boca_1.png" style="opacity:0">
+<img id="boca2" src="boca_2.png" style="opacity:0">
 
 </div>
 
 <script>
 
-const ojoI=document.getElementById("ojoIzq");
-const ojoD=document.getElementById("ojoDer");
+const b0=document.getElementById("boca0");
+const b1=document.getElementById("boca1");
+const b2=document.getElementById("boca2");
 
-function blink(){
+const estados=[
+    [1,0,0],
+    [0,1,0],
+    [0,0,1],
+    [0,1,0]
+];
 
-    ojoI.style.transform="scaleY(0.08)";
-    ojoD.style.transform="scaleY(0.08)";
+let i=0;
 
-    setTimeout(()=>{
+setInterval(()=>{
 
-        ojoI.style.transform="scaleY(1)";
-        ojoD.style.transform="scaleY(1)";
+    b0.style.opacity=estados[i][0];
+    b1.style.opacity=estados[i][1];
+    b2.style.opacity=estados[i][2];
 
-    },120);
+    i++;
 
-}
+    if(i>=estados.length)
+        i=0;
 
-(function loop(){
-
-    blink();
-
-    setTimeout(loop,2500+Math.random()*2500);
-
-})();
-
-document.addEventListener("mousemove",(e)=>{
-
-    const x=(e.clientX/window.innerWidth-.5)*2;
-    const y=(e.clientY/window.innerHeight-.5)*1;
-
-    ojoI.style.translate=`${x}px ${y}px`;
-    ojoD.style.translate=`${x}px ${y}px`;
-
-});
+},120);
 
 </script>
 
