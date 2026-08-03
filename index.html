@@ -1,119 +1,206 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
-<meta charset="UTF-8">
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-}
-
-body{
-
-background:#171717;
-
-display:flex;
-justify-content:center;
-align-items:center;
-
-height:100vh;
-
-overflow:hidden;
-
-}
-
-#scene{
-
-perspective:1200px;
-
-}
-
-#avatar{
-
-width:700px;
-
-transition:
-transform .08s linear;
-
-transform-style:preserve-3d;
-
-filter:drop-shadow(0 25px 40px rgba(0,0,0,.45));
-
-}
-
-#avatar img{
-
-width:100%;
-display:block;
-user-select:none;
-pointer-events:none;
-
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Interactivo con Canvas</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            text-align: center;
+            background: #1e293b;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        canvas {
+            background: #0f172a;
+            border-radius: 0.75rem;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            cursor: pointer;
+        }
+        .controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        input[type="text"] {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #fff;
+            width: 300px;
+        }
+        button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            background: #3b82f6;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+    </style>
 </head>
-
 <body>
 
-<div id="scene">
-
-<div id="avatar">
-
-<img src="base.png">
-
-</div>
-
+<div class="container">
+    <h2>Mi Avatar Inteligente con Canvas</h2>
+    <canvas id="avatarCanvas" width="500" height="650"></canvas>
+    
+    <div class="controls">
+        <input type="text" id="speechText" placeholder="Escribe lo que quieres que diga el avatar..." value="¡Hola! Bienvenidos a nuestra aplicación interactiva con Canvas.">
+        <button id="talkBtn">Hablar</button>
+    </div>
 </div>
 
 <script>
+const canvas = document.getElementById('avatarCanvas');
+const ctx = canvas.getContext('2d');
 
-const avatar=document.getElementById("avatar");
+// Coordenadas del ratón relativas al canvas
+let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
 
-let mx=0;
-let my=0;
+// Carga de imágenes (reemplaza los nombres con los archivos de tus capas)
+const imgBase = new Image();
+imgBase.src = 'ChatGPT Image 17 de juny del 2026, 09_54_36.png'; // Imagen base con la cara completa
 
-document.addEventListener("mousemove",e=>{
+// Estados de la boca para la animación de voz
+const mouthClosed = new Image();
+mouthClosed.src = 'watermarked_img_1956988458682263485.png'; // Boca cerrada
 
-mx=(e.clientX/window.innerWidth-.5);
-my=(e.clientY/window.innerHeight-.5);
+const mouthMedium = new Image();
+mouthMedium.src = 'Gemini_Generated_Image_lr1j2flr1j2flr1j.png'; // Boca media abierta
 
+const mouthOpen = new Image();
+mouthOpen.src = 'ChatGPT Image 17 de juny del 2026, 09_54_36.png'; // O la variante con boca abierta
+
+let currentMouth = mouthClosed;
+let isSpeaking = false;
+let animTimer = 0;
+let headAngle = 0;
+
+// Escuchar movimiento del ratón para los ojos
+window.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
 });
 
-let t=0;
+// Bucle principal de renderizado y animación
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-function loop(){
+    ctx.save();
+    
+    // 1. Efecto sutil de respiración / movimiento de cabeza
+    headAngle += 0.03;
+    let floatY = Math.sin(headAngle) * 3;
+    ctx.translate(0, floatY);
 
-t+=0.03;
+    // 2. Dibujar la imagen base del avatar
+    if (imgBase.complete) {
+        // Dibujamos la cara centrada
+        ctx.drawImage(imgBase, 50, 50, 400, 520);
+    }
 
-const breathe=Math.sin(t)*4;
+    // 3. Animación de la boca si está hablando
+    if (isSpeaking) {
+        animTimer++;
+        // Alternar estados de la boca cada pocos fotogramas para simular fonemas
+        let state = Math.floor(animTimer / 5) % 3;
+        if (state === 0) currentMouth = mouthClosed;
+        else if (state === 1) currentMouth = mouthMedium;
+        else currentMouth = mouthOpen;
 
-const rotateX=my*8;
+        // Aquí dibujamos la capa de la boca en su posición exacta sobre la cara
+        if (currentMouth.complete) {
+            // Coordenadas de ejemplo de la boca en el canvas (ajusta según tus imágenes)
+            // ctx.drawImage(currentMouth, x, y, ancho, alto);
+        }
+    }
 
-const rotateY=-mx*12;
+    // 4. Lógica de seguimiento de ojos interactiva
+    // Calculamos el desplazamiento de las pupilas en función de la posición del ratón
+    let eyeCenterXLeft = 195;
+    let eyeCenterXRight = 305;
+    let eyeCenterY = 230;
 
-const rotateZ=Math.sin(t*.5)*1.2;
+    let maxDist = 6; // Límite de movimiento de la pupila dentro del ojo
+    let dx = mouse.x - eyeCenterXLeft;
+    let dy = mouse.y - eyeCenterY;
+    let angle = Math.atan2(dy, dx);
+    let dist = Math.min(Math.hypot(dx, dy) * 0.05, maxDist);
 
-const scale=1+Math.sin(t)*0.005;
+    let pupilLeftX = eyeCenterXLeft + Math.cos(angle) * dist;
+    let pupilLeftY = eyeCenterY + Math.sin(angle) * dist;
 
-avatar.style.transform=`
-translateY(${breathe}px)
-rotateX(${rotateX}deg)
-rotateY(${rotateY}deg)
-rotateZ(${rotateZ}deg)
-scale(${scale})
-`;
+    let dx2 = mouse.x - eyeCenterXRight;
+    let dy2 = mouse.y - eyeCenterY;
+    let angle2 = Math.atan2(dy2, dx2);
+    let dist2 = Math.min(Math.hypot(dx2, dy2) * 0.05, maxDist);
 
-requestAnimationFrame(loop);
+    let pupilRightX = eyeCenterXRight + Math.cos(angle2) * dist2;
+    let pupilRightY = eyeCenterY + Math.sin(angle2) * dist2;
 
+    // Dibujar pupilas dinámicas
+    ctx.fillStyle = '#1e1b4b';
+    ctx.beginPath();
+    ctx.arc(pupilLeftX, pupilLeftY, 8, 0, Math.PI * 2);
+    ctx.arc(pupilRightX, pupilRightY, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Brillo de los ojos
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(pupilLeftX - 2, pupilLeftY - 2, 3, 0, Math.PI * 2);
+    ctx.arc(pupilRightX - 2, pupilRightY - 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+    requestAnimationFrame(animate);
 }
 
-loop();
+// Integración con Web Speech API para hablar y mover la boca al mismo tiempo
+document.getElementById('talkBtn').addEventListener('click', () => {
+    const text = document.getElementById('speechText').value;
+    if (!text) return;
 
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'es-ES';
+
+    utterance.onstart = () => {
+        isSpeaking = true;
+    };
+
+    utterance.onend = () => {
+        isSpeaking = false;
+        currentMouth = mouthClosed;
+    };
+
+    window.speechSynthesis.speak(utterance);
+});
+
+// Iniciar animación cuando carguen las imágenes
+imgBase.onload = () => {
+    animate();
+};
 </script>
 
 </body>
