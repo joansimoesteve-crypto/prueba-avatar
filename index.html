@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-
 <meta charset="UTF-8">
+<title>Avatar IA</title>
 
 <style>
 
@@ -15,11 +14,14 @@
 
 body{
 
-    background:#1f1f1f;
+    background:#1e1e1e;
+
     display:flex;
     justify-content:center;
     align-items:center;
+
     height:100vh;
+
     overflow:hidden;
 
 }
@@ -27,64 +29,60 @@ body{
 #avatar{
 
     position:relative;
+
     width:712px;
     height:926px;
 
-    animation:respirar 4s ease-in-out infinite;
+    animation:respirar 5s ease-in-out infinite;
 
 }
 
-#base{
+#avatar img{
 
     position:absolute;
-    width:100%;
+
     left:0;
     top:0;
 
-}
+    width:100%;
+    height:100%;
 
-#ojoIzq{
-
-    position:absolute;
-
-    left:226px;
-    top:286px;
-
-    width:84px;
-
-    transform-origin:center;
-
-    transition:.08s;
+    user-select:none;
+    pointer-events:none;
 
 }
 
+#ojoIzq,
 #ojoDer{
 
-    position:absolute;
-
-    left:401px;
-    top:286px;
-
-    width:84px;
-
-    transform-origin:center;
-
-    transition:.08s;
+    transform-origin:center center;
 
 }
 
 @keyframes respirar{
 
 0%{
-transform:translateY(0px);
+
+    transform:
+    translateY(0px)
+    rotate(0deg);
+
 }
 
 50%{
-transform:translateY(3px);
+
+    transform:
+    translateY(4px)
+    rotate(.3deg);
+
 }
 
 100%{
-transform:translateY(0px);
+
+    transform:
+    translateY(0px)
+    rotate(0deg);
+
 }
 
 }
@@ -97,11 +95,11 @@ transform:translateY(0px);
 
 <div id="avatar">
 
-<img id="base" src="base.png">
+    <img id="base" src="base.png">
 
-<img id="ojoIzq" src="ojo_izq.png">
+    <img id="ojoIzq" src="ojo_izq.png">
 
-<img id="ojoDer" src="ojo_der.png">
+    <img id="ojoDer" src="ojo_der.png">
 
 </div>
 
@@ -110,10 +108,10 @@ transform:translateY(0px);
 const ojoI=document.getElementById("ojoIzq");
 const ojoD=document.getElementById("ojoDer");
 
-function parpadear(){
+function blink(){
 
-    ojoI.style.transform="scaleY(0.05)";
-    ojoD.style.transform="scaleY(0.05)";
+    ojoI.style.transform="scaleY(0.08)";
+    ojoD.style.transform="scaleY(0.08)";
 
     setTimeout(()=>{
 
@@ -124,31 +122,25 @@ function parpadear(){
 
 }
 
-function siguienteParpadeo(){
+(function loop(){
 
-    parpadear();
+    blink();
 
-    setTimeout(
-        siguienteParpadeo,
-        2500 + Math.random()*2500
-    );
+    setTimeout(loop,2500+Math.random()*2500);
 
-}
+})();
 
-setTimeout(siguienteParpadeo,1500);
+document.addEventListener("mousemove",(e)=>{
 
-document.addEventListener("mousemove",e=>{
+    const x=(e.clientX/window.innerWidth-.5)*2;
+    const y=(e.clientY/window.innerHeight-.5)*1;
 
-    let x=(e.clientX/window.innerWidth-0.5)*6;
-    let y=(e.clientY/window.innerHeight-0.5)*4;
-
-    ojoI.style.translate=x+"px "+y+"px";
-    ojoD.style.translate=x+"px "+y+"px";
+    ojoI.style.translate=`${x}px ${y}px`;
+    ojoD.style.translate=`${x}px ${y}px`;
 
 });
 
 </script>
 
 </body>
-
 </html>
